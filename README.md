@@ -12,6 +12,7 @@ paper [sRGB Real Noise Synthesizing with Neighboring Correlation-Aware Noise Mod
 ### details 
 - Without differentiating between cameras based on ISO level
     - ``--cam_name total``
+    - You can check the data_preparetion folder to see how I split the train & test without separating the camera models based on ISO.
 - if you use pretrain models
     - ``--use_pretrained``
     - ``--checkpoint_G3_name ~.pth``
