@@ -24,4 +24,4 @@ paper [sRGB Real Noise Synthesizing with Neighboring Correlation-Aware Noise Mod
 ```
 submission_srgb.ipynb
 ```
-- Note that it contains both <ins>kaggle<\ins> and <ins>SIDD official server(annotated)<\ins> submission code.
+- Note that it contains both <ins>kaggle</ins> and <ins>SIDD official server(annotated)</ins> submission code.
