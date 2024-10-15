@@ -20,3 +20,8 @@ paper [sRGB Real Noise Synthesizing with Neighboring Correlation-Aware Noise Mod
 ```
 !python main_train_neca_data.py --dir_save './saves/dncnn_neca_medium_total_aug/' --train_img_dir './dataset/SIDD_srgb_medium/Crop' --data_prep_dir './data_preparation/' --use_pretrained --checkpoint_G3_name checkpoint_G3_step_00000000.pth --not_aug --patch_size 96 --cam_name total --batch_size 32 --num_workers 4 --verbose --epochs 300 --gpu_ids 0 --test_epoch 5 --lr_decay_2 80 
 ```
+## Submission
+```
+submission_srgb.ipynb
+```
+- Note that it contains both <ins>kaggle<\ins> and <ins>SIDD official server(annotated)<\ins> submission code.
