@@ -67,7 +67,9 @@ def main():
 
     clean_images = get_images_path("clean", opt.cam_name, opt.train_img_dir)
     noisy_images = get_images_path("noisy", opt.cam_name, opt.train_img_dir)
-
+    clean_images.sort()
+    noisy_images.sort()
+    
     total_start_time = time.time()
 
     for clean_path, noisy_path in zip(clean_images, noisy_images):
