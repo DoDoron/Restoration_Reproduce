@@ -35,5 +35,6 @@ submission_srgb.ipynb
 - Note that it contains both <ins>kaggle</ins> and <ins>SIDD official server(annotated)</ins> submission code.
 ## Validation result
 ```
+%cd ./sRGB-Real-Noise-Synthesis
 !python metric_validation.py --checkpoint_path './models/checkpoint_G3_epoch_300_step_00232500.pth' --valid_GT_dir './ValidationGtBlocksSrgb.mat' --valid_NOISY_dir './ValidationNoisyBlocksSrgb.mat'
 ```
