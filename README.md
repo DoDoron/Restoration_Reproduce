@@ -4,8 +4,8 @@ paper [sRGB Real Noise Synthesizing with Neighboring Correlation-Aware Noise Mod
 
 ## Prepare Dataset
 
-1. Download SIDD-Medium sRGB, Validation and Benchmark dataset at [here](https://www.eecs.yorku.ca/~kamel/sidd/dataset.php).
-2. Use `Crop_SIDD.py` to crop images into 512×512 patches.
+1. Download SIDD-Medium, Validation and Benchmark sRGB dataset at [here](https://www.eecs.yorku.ca/~kamel/sidd/dataset.php).
+2. Use `Crop_SIDD.py` to crop SIDD-Medium sRGB images into 512×512 patches.
 3. Run the code as
 
 ## Train 
