@@ -6,7 +6,7 @@ paper [Noise2NoiseFlow: Realistic Camera Noise Modeling without Clean Images](ht
 
 ```
 !git clone https://github.com/SamsungLabs/Noise2NoiseFlow.git
-%cd /home/gurwn/restoration/kaggle/Noise2NoiseFlow/sRGB_noise_modeling
+%cd /Noise2NoiseFlow/sRGB_noise_modeling
 ```
 1. Place ``flow_srgb_synthesis.py``(Code for Noise Synthesis) in ./sRGB_noise_modeling
 2. ``flow_srgb_synthesis.py`` assumes that you have not run ``train_noise_model.py``. If you run the above code, `logdir`, `sidd_path`, and `model_save_dir` in `hps.txt` will be automatically changed, but if you run `flow_srgb_synthesis.py` only, they will not be changed ``train_noise_model.py`` shouldn't be a problem, but if it is, please change the paths.
