@@ -13,7 +13,7 @@ paper [sRGB Real Noise Synthesizing with Neighboring Correlation-Aware Noise Mod
 - Noise synthesis for each camera model
     - When a composite image is saved, it is stored in `save_dir`
 ```
-!python synthesis.py --cam_name IP --train_img_dir './dataset/SIDD_srgb_medium/Crop' --NeCA_type W
+!python neca_synthesis_SIDD.py --cam_name IP --train_img_dir './dataset/SIDD_srgb_medium/Crop' --NeCA_type W
 ```
 ### Denoising DnCNN
 #### details 
