@@ -11,5 +11,5 @@ paper [Dual Adversarial Network: Toward Real-world Noise Removal and Noise Gener
 ``danet_synthesis_SIDD.py`` 
   - Modify the `--file_path` paths to the your paths
 ```
-!python danet_synthesis_SIDD.py --file_path '/home/gurwn/restoration/kaggle/dataset/SIDD_srgb_medium/Crop'
+!python danet_synthesis_SIDD.py --file_path './SIDD_srgb_medium/Crop'
 ```
