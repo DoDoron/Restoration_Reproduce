@@ -5,7 +5,7 @@ import torch
 import math
 import random
 import glob
-
+import torch.nn.functional as F
 
 '''
 # --------------------------------------------
@@ -150,30 +150,100 @@ def calculate_psnr(img1, img2, border=0):
     return 20 * math.log10(255.0 / math.sqrt(mse))
 
 # ----------------------------------------------------
+# Average KL Divergence
+# ----------------------------------------------------
+def get_gausskernel(p, chn=3):
+    '''
+    Build a 2-dimensional Gaussian filter with size p
+    '''
+    x = cv2.getGaussianKernel(p, sigma=-1)   # p x 1
+    y = np.matmul(x, x.T)[np.newaxis, np.newaxis,]  # 1x 1 x p x p
+    out = np.tile(y, (chn, 1, 1, 1)) # chn x 1 x p x p
+
+    return torch.from_numpy(out).type(torch.float32)
+
+def gaussblur(x, kernel, p=5, chn=3):
+    x_pad = F.pad(x, pad=[int((p-1)/2),]*4, mode='reflect')
+    y = F.conv2d(x_pad, kernel, padding=0, stride=1, groups=chn)
+
+    return y
+
+def kl_gauss_zero_center(sigma_fake, sigma_real):
+    '''
+    Input:
+        sigma_fake: 1 x C x H x W, torch array
+        sigma_real: 1 x C x H x W, torch array
+    '''
+    div_sigma = torch.div(sigma_fake, sigma_real)
+    div_sigma.clamp_(min=0.1, max=10)
+    log_sigma = torch.log(1 / div_sigma)
+    distance = 0.5 * torch.mean(log_sigma + div_sigma - 1.)
+    return distance
+
+def estimate_sigma_gauss(img_noisy, img_gt):
+    win_size = 7
+    err2 = (img_noisy - img_gt) ** 2
+    kernel = get_gausskernel(win_size, chn=3).to(img_gt.device)
+    sigma = gaussblur(err2, kernel, win_size, chn=3)
+    sigma.clamp_(min=1e-10)
+
+    return sigma
+
+def calculate_alkd(real_noisy, fake_noisy, clean):
+    sigma_real = estimate_sigma_gauss(real_noisy, clean)
+    sigma_fake = estimate_sigma_gauss(fake_noisy, clean)
+    alkd = kl_gauss_zero_center(sigma_fake, sigma_real)
+    return alkd.item()
+
+# ----------------------------------------------------
 # KL Divergence
 # ----------------------------------------------------
+
 def noise_quantization(noisy, clean):
     """Discretize the siythesied noise"""
     noisy = torch.clip(noisy, 0, 1)
     noisy = torch.round(noisy * 255) / 255.0
     noise = noisy - clean
     return noise
+""" 
+NeCA metric
+"""
+# def get_histogram(data, bin_edges=None, left_edge=0.0, right_edge=1.0, n_bins=1000):
+#     data_range = right_edge - left_edge
+#     bin_width = data_range / n_bins
+#     if bin_edges is None:
+#         bin_edges = np.arange(left_edge, right_edge + bin_width, bin_width)
+#     bin_centers = bin_edges[:-1] + (bin_width / 2.0)
+#     n = np.prod(data.shape)
+#     hist, _ = np.histogram(data, bin_edges)
+#     return hist / n, bin_centers
 
-def get_histogram(data, bin_edges=None, left_edge=0.0, right_edge=1.0, n_bins=1000):
-    data_range = right_edge - left_edge
-    bin_width = data_range / n_bins
-    if bin_edges is None:
-        bin_edges = np.arange(left_edge, right_edge + bin_width, bin_width)
-    bin_centers = bin_edges[:-1] + (bin_width / 2.0)
-    n = np.prod(data.shape)
-    hist, _ = np.histogram(data, bin_edges)
-    return hist / n, bin_centers
+# def cal_kld(p_data, q_data, left_edge=0.0, right_edge=1.0, n_bins=1000):
+#     """Returns forward, inverse, and symmetric KL divergence between two sets of data points p and q"""
+#     bw = 0.2 / 64
+#     bin_edges = np.concatenate(([-1000.0], np.arange(-0.1, 0.1 + 1e-9, bw), [1000.0]), axis=0)
+#     p, _ = get_histogram(p_data, bin_edges, left_edge, right_edge, n_bins) 
+#     q, _ = get_histogram(q_data, bin_edges, left_edge, right_edge, n_bins)
+#     idx = (p > 0) & (q > 0)
+#     p = p[idx]
+#     q = q[idx]
+#     logp = np.log(p)
+#     logq = np.log(q)
+#     kl_fwd = np.sum(p * (logp - logq))
+#     kl_inv = np.sum(q * (logq - logp))
+#     kl_sym = (kl_fwd + kl_inv) / 2.0
+#     return kl_fwd #, kl_inv, kl_sym
 
-def cal_kld(p_data, q_data, left_edge=0.0, right_edge=1.0, n_bins=1000):
+"""
+NAFlow metric
+"""
+def cal_kld(p_data, q_data, bin_edges=None, left_edge=-1.0, right_edge=1.0, n_bins=256):
     """Returns forward, inverse, and symmetric KL divergence between two sets of data points p and q"""
-    bw = 0.2 / 64
-    bin_edges = np.concatenate(([-1000.0], np.arange(-0.1, 0.1 + 1e-9, bw), [1000.0]), axis=0)
-    p, _ = get_histogram(p_data, bin_edges, left_edge, right_edge, n_bins) 
+    if bin_edges is None:
+        data_range = right_edge - left_edge
+        bin_width = data_range / n_bins
+        bin_edges = np.arange(left_edge, right_edge + bin_width, bin_width)
+    p, _ = get_histogram(p_data, bin_edges, left_edge, right_edge, n_bins)
     q, _ = get_histogram(q_data, bin_edges, left_edge, right_edge, n_bins)
     idx = (p > 0) & (q > 0)
     p = p[idx]
@@ -183,7 +253,17 @@ def cal_kld(p_data, q_data, left_edge=0.0, right_edge=1.0, n_bins=1000):
     kl_fwd = np.sum(p * (logp - logq))
     kl_inv = np.sum(q * (logq - logp))
     kl_sym = (kl_fwd + kl_inv) / 2.0
-    return kl_fwd #, kl_inv, kl_sym
+    return kl_fwd # , kl_inv, kl_sym
+
+def get_histogram(data, bin_edges=None, left_edge=-1.0, right_edge=1.0, n_bins=256):
+    data_range = right_edge - left_edge
+    bin_width = data_range / n_bins
+    if bin_edges is None:
+        bin_edges = np.arange(left_edge, right_edge + bin_width, bin_width)
+    bin_centers = bin_edges[:-1] + (bin_width / 2.0)
+    n = np.prod(data.shape)
+    hist, _ = np.histogram(data, bin_edges)
+    return hist / n, bin_centers
 
 """
 # -------------------------------------
@@ -269,8 +349,6 @@ def train_test_split(ori_dir, target_dir, cam_name, ratio=0.8):
 
 # cam_name 구분 없이 실행 : cam_name = total
 def get_img_list(ori_dir, cam_name, mode='train', ratio=0.9):
-    """get the image list for training and testing. 
-       Training and validation sets are randomly selected from the training set."""
     if mode == 'train':
         if cam_name == 'total':
             file_name = 'train.txt'
@@ -309,7 +387,7 @@ def get_img_list(ori_dir, cam_name, mode='train', ratio=0.9):
             file.close()
             test_lists = []    
             for sub_dir in sub_dirs:
-                full_dir = os.path.join(ori_dir, sub_dir.strip(), 'noisy', '*.png')
+                full_dir = os.path.join(ori_dir, sub_dir.strip(), 'noisy', '*.png') # noisy images
                 test_lists.extend(glob.glob(full_dir))
             return test_lists        
         else:
@@ -326,8 +404,16 @@ def get_img_list(ori_dir, cam_name, mode='train', ratio=0.9):
     else:
         raise ValueError('Wrong mode.')
 
-        
+def get_img_list_polyu(ori_dir, ratio=0.8):
+    img_lists = []
+    img_lists = glob.glob(os.path.join(ori_dir, '**/*real.JPG'), recursive=True)
 
+    # 데이터셋 분할
+    num_train = round(len(img_lists) * ratio)
+    train_lists = random.sample(img_lists, num_train)
+    test_lists = list(set(img_lists) - set(train_lists))
+
+    return train_lists, test_lists
 
 
 if __name__ == '__main__':
