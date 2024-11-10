@@ -15,6 +15,11 @@ paper [sRGB Real Noise Synthesizing with Neighboring Correlation-Aware Noise Mod
 ```
 !python neca_synthesize_SIDD.py --cam_name IP --train_img_dir './dataset/SIDD_srgb_medium/Crop' --NeCA_type W
 ```
+#### `Update` : kld, akld metric and csv file save
+```
+!python neca_synthesize_kld.py --cam_name IP --train_img_dir './dataset/SIDD_validation' --NeCA_type W
+```
+
 ### Denoising DnCNN
 #### details 
 - Without differentiating between cameras based on ISO level
