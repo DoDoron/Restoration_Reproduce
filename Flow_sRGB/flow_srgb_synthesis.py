@@ -93,11 +93,11 @@ def get_image_paths(directory, type="PolyU", cam_name=None):
         elif type == "siddvalid":
             iso_vals = [100, 400, 800, 1600, 3200]
             def glob_pattern(img_type):
-                subfolder = "gt" if img_type == "gt" else "noisy"
+                subfolder = "groundtruth" if img_type == "groundtruth" else "input"
                 return os.path.join(directory, f'**/{subfolder}/*.png')
 
             clean_images, noisy_images = [], []
-            for filepath in glob.glob(glob_pattern("noisy"), recursive=True):
+            for filepath in glob.glob(glob_pattern("input"), recursive=True):
                 filename = os.path.basename(filepath)
                 parts = filename.split("_")
                 # ISO 값이 3번째에 있다고 가정하고 텍스트로 비교
@@ -105,7 +105,7 @@ def get_image_paths(directory, type="PolyU", cam_name=None):
                 if iso_value_str in [iso for iso in iso_vals]:
                     noisy_images.append(filepath)
             
-            for filepath in glob.glob(glob_pattern("gt"), recursive=True):
+            for filepath in glob.glob(glob_pattern("groundtruth"), recursive=True):
                 filename = os.path.basename(filepath)
                 parts = filename.split("_")
                 # ISO 값이 3번째에 있다고 가정하고 텍스트로 비교
@@ -253,20 +253,6 @@ with open(csv_file_path, mode='w', newline='') as csv_file:
                     'nlf0': batch_images['nlf0'].to(hps.device),
                     'nlf1': batch_images['nlf1'].to(hps.device)
                 })
-
-        # image_patch_path = batch_images['image_path']
-        # print()
-        # print(image_patch_path)
-        # relative_path = os.path.relpath(image_patch_path, args.data_path)
-
-        # # 새로운 디렉토리 경로 생성
-        # new_noisy_dir = os.path.join(synthesis_base_dir, os.path.dirname(relative_path))
-        # os.makedirs(new_noisy_dir, exist_ok=True)  # 디렉토리가 없으면 생성
-        # base_name = os.path.basename(image_patch_path)
-        # new_noisy_path = os.path.join(new_noisy_dir, base_name)
-        # print("directory name")
-        # print(new_noisy_dir)
-        # print(new_noisy_path)
                 
         akld = 0
         kld = 0
@@ -299,7 +285,3 @@ with open(csv_file_path, mode='w', newline='') as csv_file:
 total_kl /= count
 total_akld /= count
 print(f"KLD : {total_kl} / AKLD : {total_akld}")
-
-    # # Save noisy image 
-    # vutils.save_image(x_sample_val, new_noisy_path, normalize=True)
-    # print(f"Saved synthesized noisy image to {new_noisy_path}")
